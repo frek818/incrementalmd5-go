@@ -64,6 +64,8 @@ func main() {
 			return nil
 		}
 
+		log.Printf("Checking %s", relPath)
+
 		if strings.HasSuffix(relPath, MD5TimestampFile) {
 			log.Println("SKIPPING")
 			return nil
@@ -124,8 +126,10 @@ func fileMD5(path string) (string, error) {
 	}
 	defer file.Close()
 
+	buf := make([]byte, 4096)
+
 	hash := md5.New()
-	if _, err := io.Copy(hash, file); err != nil {
+	if _, err := io.CopyBuffer(hash, file, buf); err != nil {
 		return "", err
 	}
 	return hex.EncodeToString(hash.Sum(nil)), nil
