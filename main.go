@@ -53,6 +53,8 @@ func main() {
 	processedCount := 0
 	processingStart := time.Now()
 
+	buf := make([]byte, 8192)
+
 	filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return nil
@@ -73,7 +75,7 @@ func main() {
 
 		needsUpdate := info.ModTime().After(lastRun) || !fileExistsInChecksums(relPath, existingChecksums)
 		if needsUpdate {
-			sum, err := fileMD5(path)
+			sum, err := fileMD5(path, buf)
 			if err != nil {
 				log.Printf("Checksum failed: %s - %v", path, err)
 				return nil
@@ -119,14 +121,12 @@ func main() {
 	log.Printf("Total duration: %v | Entries: %d", time.Since(totalStart), len(newChecksums))
 }
 
-func fileMD5(path string) (string, error) {
+func fileMD5(path string, buf []byte) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
-
-	buf := make([]byte, 4096)
 
 	hash := md5.New()
 	if _, err := io.CopyBuffer(hash, file, buf); err != nil {
